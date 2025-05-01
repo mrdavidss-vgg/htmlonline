@@ -213,122 +213,194 @@
     <small>please note the css is not mine and the orginal css is from <a href="https://github.com/tazz-devv/HTML-unleashed">HTML Unleashed</a></small>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script>
-        const htmlEditor = document.getElementById('htmlEditor');
-        const cssEditor = document.getElementById('cssEditor');
-        const jsEditor = document.getElementById('jsEditor');
-        const previewFrame = document.getElementById('previewFrame');
-        const importZipBtn = document.getElementById('importZipBtn');
-        const zipFileInput = document.getElementById('zipFileInput');
-        const exportProjectBtn = document.getElementById('exportProjectBtn');
-        const openPreviewBtn = document.getElementById('openPreviewBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const statusMessage = document.getElementById('statusMessage');
+<script>
+    const htmlEditor = document.getElementById('htmlEditor');
+    const cssEditor = document.getElementById('cssEditor');
+    const jsEditor = document.getElementById('jsEditor');
+    const previewFrame = document.getElementById('previewFrame');
+    const importZipBtn = document.getElementById('importZipBtn');
+    const zipFileInput = document.getElementById('zipFileInput');
+    const exportProjectBtn = document.getElementById('exportProjectBtn');
+    const openPreviewBtn = document.getElementById('openPreviewBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const statusMessage = document.getElementById('statusMessage');
 
-        let activeTab = 'html';
+    let activeTab = 'html';
 
-        updatePreview();
+    updatePreview();
 
-        htmlEditor.addEventListener('input', updatePreview);
-        cssEditor.addEventListener('input', updatePreview);
-        jsEditor.addEventListener('input', updatePreview);
+    htmlEditor.addEventListener('input', updatePreview);
+    cssEditor.addEventListener('input', updatePreview);
+    jsEditor.addEventListener('input', updatePreview);
 
-        importZipBtn.addEventListener('click', () => {
-            zipFileInput.click();
+    importZipBtn.addEventListener('click', () => {
+        zipFileInput.click();
+    });
+
+    zipFileInput.addEventListener('change', handleZipImport);
+
+    exportProjectBtn.addEventListener('click', exportProject);
+
+    openPreviewBtn.addEventListener('click', openInNewWindow);
+
+    clearBtn.addEventListener('click', clearAll);
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.tab;
+            switchTab(tab);
         });
+    });
 
-        zipFileInput.addEventListener('change', handleZipImport);
+    function updatePreview() {
+        try {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
+            
+            const fullHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>${css}</style>
+                </head>
+                <body>
+                    ${html}
+                    <script>${js}<\/script>
+                </body>
+                </html>
+            `;
+            
+            previewFrame.srcdoc = fullHtml;
+            statusMessage.textContent = "Preview updated";
+        } catch (error) {
+            statusMessage.textContent = "Error updating preview: " + error.message;
+        }
+    }
 
-        exportProjectBtn.addEventListener('click', exportProject);
-
-        openPreviewBtn.addEventListener('click', openInNewWindow);
-
-        clearBtn.addEventListener('click', clearAll);
-
+    function switchTab(tab) {
+        activeTab = tab;
+        
+        document.querySelectorAll('.editor-section textarea').forEach(editor => {
+            editor.style.display = 'none';
+        });
+        
+        document.getElementById(`${tab}Editor`).style.display = 'block';
+        
         tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const tab = button.dataset.tab;
-                switchTab(tab);
-            });
-        });
-
-        function updatePreview() {
-            try {
-                const html = htmlEditor.value;
-                const css = cssEditor.value;
-                const js = jsEditor.value;
-                
-                const fullHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>${css}</style>
-                    </head>
-                    <body>
-                        ${html}
-                        <script>${js}<\/script>
-                    </body>
-                    </html>
-                `;
-                
-                previewFrame.srcdoc = fullHtml;
-                statusMessage.textContent = "Preview updated";
-            } catch (error) {
-                statusMessage.textContent = "Error updating preview: " + error.message;
+            if (button.dataset.tab === tab) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
             }
-        }
+        });
+    }
 
-        function switchTab(tab) {
-            activeTab = tab;
+    async function handleZipImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        try {
+            statusMessage.textContent = "Importing ZIP file...";
             
-            document.querySelectorAll('.editor-section textarea').forEach(editor => {
-                editor.style.display = 'none';
-            });
+            const zip = new JSZip();
+            const content = await zip.loadAsync(file);
             
-            document.getElementById(`${tab}Editor`).style.display = 'block';
+            let html = '', css = '', js = '';
             
-            tabButtons.forEach(button => {
-                if (button.dataset.tab === tab) {
-                    button.classList.add('active');
-                } else {
-                    button.classList.remove('active');
+            for (const [relativePath, file] of Object.entries(content.files)) {
+                if (file.dir) continue;
+                
+                const fileContent = await file.async('text');
+                const extension = relativePath.split('.').pop().toLowerCase();
+                
+                if (extension === 'html') {
+                    html = fileContent;
+                } else if (extension === 'css') {
+                    css = fileContent;
+                } else if (extension === 'js') {
+                    js = fileContent;
                 }
-            });
+            }
+            
+            htmlEditor.value = html;
+            cssEditor.value = css;
+            jsEditor.value = js;
+            
+            updatePreview();
+            statusMessage.textContent = "Project imported successfully";
+        } catch (error) {
+            statusMessage.textContent = "Error importing ZIP: " + error.message;
         }
+    }
 
-        async function handleZipImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+    function exportProject() {
+        try {
+            const zip = new JSZip();
             
-            try {
-                statusMessage.textContent = "Importing ZIP file...";
-                
-                const zip = new JSZip();
-                const content = await zip.loadAsync(file);
-                
-                let html = '', css = '', js = '';
-                
-                for (const [relativePath, file] of Object.entries(content.files)) {
-                    if (file.dir) continue;
-                    
-                    const fileContent = await file.async('text');
-                    const extension = relativePath.split('.').pop().toLowerCase();
-                    
-                    if (extension === 'html') {
-                        html = fileContent;
-                    } else if (extension === 'css') {
-                        css = fileContent;
-                    } else if (extension === 'js') {
-                        js = fileContent;
-                    }
-                }
-                
-                htmlEditor.value = html;
-                cssEditor.value = css;
-                jsEditor.value = js;
-                
-                updatePreview();
-                statusMessage.textContent = "Project imported successfully";
-            } catch (error) {
-                statusMessage.textContent = "Error importing ZIP: " + error
+            if (htmlEditor.value) {
+                zip.file("index.html", htmlEditor.value);
+            }
+            if (cssEditor.value) {
+                zip.file("styles.css", cssEditor.value);
+            }
+            if (jsEditor.value) {
+                zip.file("script.js", jsEditor.value);
+            }
+            
+            zip.generateAsync({type: "blob"}).then(content => {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'html-project.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                statusMessage.textContent = "Project exported successfully";
+            });
+        } catch (error) {
+            statusMessage.textContent = "Error exporting project: " + error.message;
+        }
+    }
+
+    function openInNewWindow() {
+        try {
+            const html = htmlEditor.value;
+            const css = cssEditor.value;
+            const js = jsEditor.value;
+            
+            const fullHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>${css}</style>
+                </head>
+                <body>
+                    ${html}
+                    <script>${js}<\/script>
+                </body>
+                </html>
+            `;
+            
+            const newWindow = window.open();
+            newWindow.document.open();
+            newWindow.document.write(fullHtml);
+            newWindow.document.close();
+            statusMessage.textContent = "Opened in new window";
+        } catch (error) {
+            statusMessage.textContent = "Error opening preview: " + error.message;
+        }
+    }
+
+    function clearAll() {
+        if (confirm("Are you sure you want to clear all editors?")) {
+            htmlEditor.value = '';
+            cssEditor.value = '';
+            jsEditor.value = '';
+            updatePreview();
+            statusMessage.textContent = "All editors cleared";
+        }
+    }
+</script>
