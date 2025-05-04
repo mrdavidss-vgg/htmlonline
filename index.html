@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>David's HTML Viewer</title>
-
-    <!-- discord embed meta tags -->
     <meta property="og:title" content="HTML Online" />
     <meta property="og:description" content="HTML Online is an online and active preview that allows you to inject html css and javascript and within a zip importer." />
     <meta property="og:image" content="https://raw.githubusercontent.com/mrdavidss-vgg/assets/refs/heads/main/IMG_3096_16x9.png" />
@@ -160,6 +158,37 @@
             color: var(--text-muted);
         }
 
+        .permalink-container {
+            background-color: var(--bg-light);
+            padding: 15px;
+            border-radius: var(--border-radius-md);
+            margin-top: 20px;
+        }
+
+        .permalink {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: var(--bg-dark);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-sm);
+            word-break: break-all;
+            display: inline-block;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: var(--transition-standard);
+            position: relative;
+        }
+
+        .permalink:hover {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+
+        .permalink-label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px auto;
@@ -179,16 +208,6 @@
             
             button {
                 width: 100%;
-            }
-            
-            .permalink {
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .permalink:hover {
-                background-color: var(--primary-color);
-                color: var(--text-light);
             }
         }
     </style>
@@ -227,252 +246,263 @@
                 <div class="status" id="statusMessage">Ready</div>
             </div>
         </div>
-    </div>
 
-    <span class="permalink" id="previewPermalink">mrdavidss.is-a.dev/htmlonline/preview/</span>
-    <span class="permalink" id="editorPermalink">mrdavidss.is-a.dev/htmlonline/editor/</span>
+        <div class="permalink-container">
+            <h3>Share Links</h3>
+            <div>
+                <span class="permalink-label">Preview:</span>
+                <span class="permalink" id="previewPermalink">/preview/Lg0d8mDLof03Jk9</span>
+            </div>
+            <div>
+                <span class="permalink-label">Editor:</span>
+                <span class="permalink" id="editorPermalink">/editor/eXAmp1eD1t0rL1nk</span>
+            </div>
+        </div>
+    </div>
     
     <small>please note the css is not mine and the orginal css is from <a href="https://github.com/tazz-devv/HTML-unleashed">HTML Unleashed</a></small>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script>
-    const htmlEditor = document.getElementById('htmlEditor');
-    const cssEditor = document.getElementById('cssEditor');
-    const jsEditor = document.getElementById('jsEditor');
-    const previewFrame = document.getElementById('previewFrame');
-    const importZipBtn = document.getElementById('importZipBtn');
-    const zipFileInput = document.getElementById('zipFileInput');
-    const exportProjectBtn = document.getElementById('exportProjectBtn');
-    const openPreviewBtn = document.getElementById('openPreviewBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const statusMessage = document.getElementById('statusMessage');
+    <script>
+        const htmlEditor = document.getElementById('htmlEditor');
+        const cssEditor = document.getElementById('cssEditor');
+        const jsEditor = document.getElementById('jsEditor');
+        const previewFrame = document.getElementById('previewFrame');
+        const importZipBtn = document.getElementById('importZipBtn');
+        const zipFileInput = document.getElementById('zipFileInput');
+        const exportProjectBtn = document.getElementById('exportProjectBtn');
+        const openPreviewBtn = document.getElementById('openPreviewBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const statusMessage = document.getElementById('statusMessage');
+        const previewPermalink = document.getElementById('previewPermalink');
+        const editorPermalink = document.getElementById('editorPermalink');
 
-    let activeTab = 'html';
+        let activeTab = 'html';
 
-    updatePreview();
-
-    htmlEditor.addEventListener('input', updatePreview);
-    cssEditor.addEventListener('input', updatePreview);
-    jsEditor.addEventListener('input', updatePreview);
-
-    importZipBtn.addEventListener('click', () => {
-        zipFileInput.click();
-    });
-
-    zipFileInput.addEventListener('change', handleZipImport);
-
-    exportProjectBtn.addEventListener('click', exportProject);
-
-    openPreviewBtn.addEventListener('click', openInNewWindow);
-
-    clearBtn.addEventListener('click', clearAll);
-
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tab = button.dataset.tab;
-            switchTab(tab);
-        });
-    });
-
-    function updatePreview() {
-        try {
-            const html = htmlEditor.value;
-            const css = cssEditor.value;
-            const js = jsEditor.value;
-            
-            const fullHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>${css}</style>
-                </head>
-                <body>
-                    ${html}
-                    <script>${js}<\/script>
-                </body>
-                </html>
-            `;
-            
-            previewFrame.srcdoc = fullHtml;
-            statusMessage.textContent = "Preview: 🟢 Active";
-        } catch (error) {
-            statusMessage.textContent = "Error updating preview: " + error.message;
+        function generateRandomString(length) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
         }
-    }
 
-    function switchTab(tab) {
-        activeTab = tab;
-        
-        document.querySelectorAll('.editor-section textarea').forEach(editor => {
-            editor.style.display = 'none';
-        });
-        
-        document.getElementById(`${tab}Editor`).style.display = 'block';
-        
-        tabButtons.forEach(button => {
-            if (button.dataset.tab === tab) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
-        });
-    }
-
-    async function handleZipImport(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        try {
-            statusMessage.textContent = "Importing ZIP file...";
+        function generatePermalinks() {
+            const previewId = generateRandomString(15);
+            previewPermalink.textContent = `https://mrdavidss.is-a.dev/htmlonline/preview/${previewId}`;
             
-            const zip = new JSZip();
-            const content = await zip.loadAsync(file);
-            
-            let html = '', css = '', js = '';
-            
-            for (const [relativePath, file] of Object.entries(content.files)) {
-                if (file.dir) continue;
-                
-                const fileContent = await file.async('text');
-                const extension = relativePath.split('.').pop().toLowerCase();
-                
-                if (extension === 'html') {
-                    html = fileContent;
-                } else if (extension === 'css') {
-                    css = fileContent;
-                } else if (extension === 'js') {
-                    js = fileContent;
-                }
-            }
-            
-            htmlEditor.value = html;
-            cssEditor.value = css;
-            jsEditor.value = js;
-            
-            updatePreview();
-            statusMessage.textContent = "Project imported successfully";
-        } catch (error) {
-            statusMessage.textContent = "Error importing ZIP: " + error.message;
+            const editorId = generateRandomString(15);
+            editorPermalink.textContent = `https://mrdavidss.is-a.dev/htmlonline/editor/${editorId}`;
         }
-    }
 
-    function exportProject() {
-        try {
-            const zip = new JSZip();
+        function copyToClipboard(event) {
+            const textToCopy = event.target.textContent;
             
-            if (htmlEditor.value) {
-                zip.file("index.html", htmlEditor.value);
-            }
-            if (cssEditor.value) {
-                zip.file("styles.css", cssEditor.value);
-            }
-            if (jsEditor.value) {
-                zip.file("script.js", jsEditor.value);
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                const message = successful ? 'Copied!' : 'Failed to copy';
+                
+                const originalText = event.target.textContent;
+                event.target.textContent = message;
+                
+                setTimeout(() => {
+                    event.target.textContent = originalText;
+                }, 1500);
+                
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
             }
             
-            zip.generateAsync({type: "blob"}).then(content => {
-                const url = URL.createObjectURL(content);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'html-project.zip';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                statusMessage.textContent = "Project exported successfully";
+            document.body.removeChild(textarea);
+        }
+
+        function updatePreview() {
+            try {
+                const html = htmlEditor.value;
+                const css = cssEditor.value;
+                const js = jsEditor.value;
+                
+                const fullHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>${css}</style>
+                    </head>
+                    <body>
+                        ${html}
+                        <script>${js}<\/script>
+                    </body>
+                    </html>
+                `;
+                
+                previewFrame.srcdoc = fullHtml;
+                statusMessage.textContent = "Preview: 🟢 Active";
+            } catch (error) {
+                statusMessage.textContent = "Error updating preview: " + error.message;
+            }
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            
+            document.querySelectorAll('.editor-section textarea').forEach(editor => {
+                editor.style.display = 'none';
             });
-        } catch (error) {
-            statusMessage.textContent = "Error exporting project: " + error.message;
-        }
-    }
-
-    function openInNewWindow() {
-        try {
-            const html = htmlEditor.value;
-            const css = cssEditor.value;
-            const js = jsEditor.value;
             
-            const fullHtml = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <style>${css}</style>
-                </head>
-                <body>
-                    ${html}
-                    <script>${js}<\/script>
-                </body>
-                </html>
-            `;
+            document.getElementById(`${tab}Editor`).style.display = 'block';
             
-            const newWindow = window.open();
-            newWindow.document.open();
-            newWindow.document.write(fullHtml);
-            newWindow.document.close();
-            statusMessage.textContent = "Opened in new window";
-        } catch (error) {
-            statusMessage.textContent = "Error opening preview: " + error.message;
+            tabButtons.forEach(button => {
+                if (button.dataset.tab === tab) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
         }
-    }
 
-    function clearAll() {
-        if (confirm("Are you sure you want to clear all editors?")) {
-            htmlEditor.value = '';
-            cssEditor.value = '';
-            jsEditor.value = '';
-            updatePreview();
-            statusMessage.textContent = "All editors cleared";
+        async function handleZipImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                statusMessage.textContent = "Importing ZIP file...";
+                
+                const zip = new JSZip();
+                const content = await zip.loadAsync(file);
+                
+                let html = '', css = '', js = '';
+                
+                for (const [relativePath, file] of Object.entries(content.files)) {
+                    if (file.dir) continue;
+                    
+                    const fileContent = await file.async('text');
+                    const extension = relativePath.split('.').pop().toLowerCase();
+                    
+                    if (extension === 'html') {
+                        html = fileContent;
+                    } else if (extension === 'css') {
+                        css = fileContent;
+                    } else if (extension === 'js') {
+                        js = fileContent;
+                    }
+                }
+                
+                htmlEditor.value = html;
+                cssEditor.value = css;
+                jsEditor.value = js;
+                
+                updatePreview();
+                statusMessage.textContent = "Project imported successfully";
+            } catch (error) {
+                statusMessage.textContent = "Error importing ZIP: " + error.message;
+            }
         }
-    }
 
-generatePermalinks();
+        function exportProject() {
+            try {
+                const zip = new JSZip();
+                
+                if (htmlEditor.value) {
+                    zip.file("index.html", htmlEditor.value);
+                }
+                if (cssEditor.value) {
+                    zip.file("styles.css", cssEditor.value);
+                }
+                if (jsEditor.value) {
+                    zip.file("script.js", jsEditor.value);
+                }
+                
+                zip.generateAsync({type: "blob"}).then(content => {
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'html-project.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    statusMessage.textContent = "Project exported successfully";
+                });
+            } catch (error) {
+                statusMessage.textContent = "Error exporting project: " + error.message;
+            }
+        }
 
-document.getElementById('previewPermalink').addEventListener('click', copyToClipboard);
-document.getElementById('editorPermalink').addEventListener('click', copyToClipboard);
+        function openInNewWindow() {
+            try {
+                const html = htmlEditor.value;
+                const css = cssEditor.value;
+                const js = jsEditor.value;
+                
+                const fullHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>${css}</style>
+                    </head>
+                    <body>
+                        ${html}
+                        <script>${js}<\/script>
+                    </body>
+                    </html>
+                `;
+                
+                const newWindow = window.open();
+                newWindow.document.open();
+                newWindow.document.write(fullHtml);
+                newWindow.document.close();
+                statusMessage.textContent = "Opened in new window";
+            } catch (error) {
+                statusMessage.textContent = "Error opening preview: " + error.message;
+            }
+        }
 
-function generatePermalinks() {
-    const previewId = generateRandomString(15);
-    document.getElementById('previewPermalink').textContent = `/preview/${previewId}`;
-    
-    const editorId = generateRandomString(15);
-    document.getElementById('editorPermalink').textContent = `/editor/${editorId}`;
-}
+        function clearAll() {
+            if (confirm("Are you sure you want to clear all editors?")) {
+                htmlEditor.value = '';
+                cssEditor.value = '';
+                jsEditor.value = '';
+                updatePreview();
+                statusMessage.textContent = "All editors cleared";
+            }
+        }
 
-function generateRandomString(length) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-}
+        generatePermalinks();
+        previewPermalink.addEventListener('click', copyToClipboard);
+        editorPermalink.addEventListener('click', copyToClipboard);
 
-function copyToClipboard(event) {
-    const textToCopy = event.target.textContent;
-    
+        updatePreview();
 
-    const textarea = document.createElement('textarea');
-    textarea.value = textToCopy;
-    textarea.style.position = 'fixed'; 
-    document.body.appendChild(textarea);
-    textarea.select();
-    
-    try {
-        const successful = document.execCommand('copy');
-        const message = successful ? 'Copied!' : 'Failed to copy';
-        
-        const originalText = event.target.textContent;
-        event.target.textContent = message;
-        
-        setTimeout(() => {
-            event.target.textContent = originalText;
-        }, 1500);
-        
-    } catch (err) {
-        console.error('Failed to copy text: ', err);
-    }
-    
-    document.body.removeChild(textarea);
-}
-</script>
+        htmlEditor.addEventListener('input', updatePreview);
+        cssEditor.addEventListener('input', updatePreview);
+        jsEditor.addEventListener('input', updatePreview);
+
+        importZipBtn.addEventListener('click', () => {
+            zipFileInput.click();
+        });
+
+        zipFileInput.addEventListener('change', handleZipImport);
+
+        exportProjectBtn.addEventListener('click', exportProject);
+
+        openPreviewBtn.addEventListener('click', openInNewWindow);
+
+        clearBtn.addEventListener('click', clearAll);
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tab = button.dataset.tab;
+                switchTab(tab);
+            });
+        });
+    </script>
+</body>
+</html>
