@@ -126,6 +126,14 @@
             color: var(--text-light);
         }
 
+        .fullscreen-preview .editor-section {
+            display: none;
+        }
+
+        .fullscreen-preview .preview-section {
+            width: 100% !important;
+        }
+
         .preview-frame {
             width: 100%;
             height: 400px;
@@ -281,8 +289,8 @@
             sessionStorage.removeItem('redirect');
 
             const pathParts = path.split('/');
-            const type = pathParts[2]; 
-            const id = pathParts[3];   
+            const type = pathParts[2];
+            const id = pathParts[3];
 
             if (type === 'editor') {
                 console.log('Loading editor session:', id);
@@ -291,6 +299,45 @@
                 console.log('Loading preview session:', id);
             }
         }
+
+        function handleIncomingURL() {
+            const redirectPath = sessionStorage.getItem('redirect');
+            if (redirectPath) {
+                sessionStorage.removeItem('redirect');
+                processEditorURL(redirectPath);
+                return;
+            }
+
+            if (window.location.hash) {
+                processEditorURL(window.location.hash.substring(1));
+            }
+        }
+
+        function processEditorURL(path) {
+            const parts = path.split('/');
+            if (parts.length < 3) return;
+
+            const type = parts[1];
+            const id = parts[2];
+
+            if (type === 'editor') {
+                loadEditorState(id);
+            } else if (type === 'preview') {
+                loadPreviewState(id);
+            }
+        }
+
+        function loadEditorState(id) {
+            console.log("Loading editor state:", id);
+            switchTab('html');
+        }
+
+        function loadPreviewState(id) {
+            console.log("Loading preview state:", id);
+            updatePreview();
+        }
+
+        document.addEventListener('DOMContentLoaded', handleIncomingURL);
         const htmlEditor = document.getElementById('htmlEditor');
         const cssEditor = document.getElementById('cssEditor');
         const jsEditor = document.getElementById('jsEditor');
@@ -318,37 +365,17 @@
 
         function generatePermalinks() {
             const previewId = generateRandomString(15);
-            previewPermalink.textContent = `https://mrdavidss.is-a.dev/htmlonline/preview/${previewId}`;
-
             const editorId = generateRandomString(15);
-            editorPermalink.textContent = `https://mrdavidss.is-a.dev/htmlonline/editor/${editorId}`;
-        }
 
-        function copyToClipboard(event) {
-            const textToCopy = event.target.textContent;
+            document.getElementById('previewPermalink').textContent = `/preview/${previewId}`;
+            document.getElementById('editorPermalink').textContent = `/editor/${editorId}`;
 
-            const textarea = document.createElement('textarea');
-            textarea.value = textToCopy;
-            textarea.style.position = 'fixed';
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            try {
-                const successful = document.execCommand('copy');
-                const message = successful ? 'Copied!' : 'Failed to copy';
-
-                const originalText = event.target.textContent;
-                event.target.textContent = message;
-
-                setTimeout(() => {
-                    event.target.textContent = originalText;
-                }, 1500);
-
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
-            }
-
-            document.body.removeChild(textarea);
+            document.getElementById('previewPermalink').onclick = () => {
+                window.location.href = `https://mrdavidss.is-a.dev/htmlonline/preview/${previewId}`;
+            };
+            document.getElementById('editorPermalink').onclick = () => {
+                window.location.href = `https://mrdavidss.is-a.dev/htmlonline/editor/${editorId}`;
+            };
         }
 
         function updatePreview() {
@@ -358,20 +385,25 @@
                 const js = jsEditor.value;
 
                 const fullHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <style>${css}</style>
-                    </head>
-                    <body>
-                        ${html}
-                        <script>${js}<\/script>
-                    </body>
-                    </html>
-                `;
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>${css}</style>
+            </head>
+            <body>
+                ${html}
+                <script>${js}<\/script>
+            </body>
+            </html>
+        `;
 
                 previewFrame.srcdoc = fullHtml;
                 statusMessage.textContent = "Preview: 🟢 Active";
+
+                if (window.location.hash.includes('/preview/')) {
+                    document.querySelector('.editor-section').style.display = 'none';
+                    document.querySelector('.preview-section').style.width = '100%';
+                }
             } catch (error) {
                 statusMessage.textContent = "Error updating preview: " + error.message;
             }
