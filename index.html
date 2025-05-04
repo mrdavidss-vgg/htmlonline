@@ -180,6 +180,16 @@
             button {
                 width: 100%;
             }
+            
+            .permalink {
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .permalink:hover {
+                background-color: var(--primary-color);
+                color: var(--text-light);
+            }
         }
     </style>
 </head>
@@ -219,7 +229,8 @@
         </div>
     </div>
 
-    <p>toothpaste</p>
+    <span class="permalink" id="previewPermalink">mrdavidss.is-a.dev/htmlonline/preview/</span>
+    <span class="permalink" id="editorPermalink">mrdavidss.is-a.dev/htmlonline/editor/</span>
     
     <small>please note the css is not mine and the orginal css is from <a href="https://github.com/tazz-devv/HTML-unleashed">HTML Unleashed</a></small>
 
@@ -414,4 +425,54 @@
             statusMessage.textContent = "All editors cleared";
         }
     }
+
+generatePermalinks();
+
+document.getElementById('previewPermalink').addEventListener('click', copyToClipboard);
+document.getElementById('editorPermalink').addEventListener('click', copyToClipboard);
+
+function generatePermalinks() {
+    const previewId = generateRandomString(15);
+    document.getElementById('previewPermalink').textContent = `/preview/${previewId}`;
+    
+    const editorId = generateRandomString(15);
+    document.getElementById('editorPermalink').textContent = `/editor/${editorId}`;
+}
+
+function generateRandomString(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
+function copyToClipboard(event) {
+    const textToCopy = event.target.textContent;
+    
+
+    const textarea = document.createElement('textarea');
+    textarea.value = textToCopy;
+    textarea.style.position = 'fixed'; 
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        const message = successful ? 'Copied!' : 'Failed to copy';
+        
+        const originalText = event.target.textContent;
+        event.target.textContent = message;
+        
+        setTimeout(() => {
+            event.target.textContent = originalText;
+        }, 1500);
+        
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+    }
+    
+    document.body.removeChild(textarea);
+}
 </script>
