@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>David's HTML Viewer</title>
     <meta property="og:title" content="HTML Online" />
-    <meta property="og:description"
-        content="HTML Online is an online and active preview that allows you to inject html css and javascript and within a zip importer." />
-    <meta property="og:image"
-        content="https://raw.githubusercontent.com/mrdavidss-vgg/assets/refs/heads/main/IMG_3096_16x9.png" />
+    <meta property="og:description" content="HTML Online is an online and active preview that allows you to inject html css and javascript and within a zip importer." />
+    <meta property="og:image" content="https://raw.githubusercontent.com/mrdavidss-vgg/assets/refs/heads/main/IMG_3096_16x9.png" />
     <meta property="og:url" content="https://mrdavidss.is-a.dev/htmlonline" />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#EC7470" />
-
+    
     <style>
         :root {
             --primary-color: #ff6b6b;
@@ -42,13 +39,8 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .container {
@@ -107,8 +99,7 @@
             flex-wrap: wrap;
         }
 
-        .editor-section,
-        .preview-section {
+        .editor-section, .preview-section {
             flex: 1;
             min-width: 300px;
         }
@@ -124,14 +115,6 @@
             resize: vertical;
             background-color: var(--bg-dark);
             color: var(--text-light);
-        }
-
-        .fullscreen-preview .editor-section {
-            display: none;
-        }
-
-        .fullscreen-preview .preview-section {
-            width: 100% !important;
         }
 
         .preview-frame {
@@ -206,13 +189,47 @@
             color: var(--primary-color);
         }
 
+        .fullscreen-preview {
+            display: none;
+        }
+
+        .fullscreen-preview.active {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+        }
+
+        .fullscreen-preview iframe {
+            width: 100%;
+            height: calc(100% - 40px);
+            border: none;
+        }
+
+        .close-fullscreen {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px auto;
                 padding: 15px;
                 width: 95%;
             }
-
+            
             .editor-container {
                 flex-direction: column;
             }
@@ -222,20 +239,19 @@
             .toolbar {
                 flex-direction: column;
             }
-
+            
             button {
                 width: 100%;
             }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <div class="header">
             <h1>David's HTML Viewer</h1>
         </div>
-
+        
         <div class="toolbar">
             <button id="importZipBtn">Import ZIP Project</button>
             <input type="file" id="zipFileInput" class="file-input" accept=".zip">
@@ -243,22 +259,21 @@
             <button id="openPreviewBtn">Open in Preview</button>
             <button id="clearBtn">Clear All</button>
         </div>
-
+        
         <div class="tab-buttons">
             <button class="tab-button active" data-tab="html">HTML</button>
             <button class="tab-button" data-tab="css">CSS</button>
             <button class="tab-button" data-tab="js">JavaScript</button>
         </div>
-
+        
         <div class="editor-container">
             <div class="editor-section">
                 <h2>Editor</h2>
                 <textarea id="htmlEditor" placeholder="Type or paste HTML here..."></textarea>
                 <textarea id="cssEditor" placeholder="Type or paste CSS here..." style="display: none;"></textarea>
-                <textarea id="jsEditor" placeholder="Type or paste JavaScript here..."
-                    style="display: none;"></textarea>
+                <textarea id="jsEditor" placeholder="Type or paste JavaScript here..." style="display: none;"></textarea>
             </div>
-
+            
             <div class="preview-section">
                 <h2>Live Preview</h2>
                 <iframe id="previewFrame" class="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
@@ -279,65 +294,15 @@
         </div>
     </div>
 
-    <small>please note the css is not mine and the orginal css is from <a
-            href="https://github.com/tazz-devv/HTML-unleashed">HTML Unleashed</a></small>
+    <div class="fullscreen-preview" id="fullscreenPreview">
+        <button class="close-fullscreen" id="closeFullscreen">Close</button>
+        <iframe id="fullscreenFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+    </div>
+    
+    <small>please note the css is not mine and the orginal css is from <a href="https://github.com/tazz-devv/HTML-unleashed">HTML Unleashed</a></small>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
-        if (sessionStorage.redirect) {
-            const path = sessionStorage.redirect;
-            sessionStorage.removeItem('redirect');
-
-            const pathParts = path.split('/');
-            const type = pathParts[2];
-            const id = pathParts[3];
-
-            if (type === 'editor') {
-                console.log('Loading editor session:', id);
-            }
-            else if (type === 'preview') {
-                console.log('Loading preview session:', id);
-            }
-        }
-
-        function handleIncomingURL() {
-            const redirectPath = sessionStorage.getItem('redirect');
-            if (redirectPath) {
-                sessionStorage.removeItem('redirect');
-                processEditorURL(redirectPath);
-                return;
-            }
-
-            if (window.location.hash) {
-                processEditorURL(window.location.hash.substring(1));
-            }
-        }
-
-        function processEditorURL(path) {
-            const parts = path.split('/');
-            if (parts.length < 3) return;
-
-            const type = parts[1];
-            const id = parts[2];
-
-            if (type === 'editor') {
-                loadEditorState(id);
-            } else if (type === 'preview') {
-                loadPreviewState(id);
-            }
-        }
-
-        function loadEditorState(id) {
-            console.log("Loading editor state:", id);
-            switchTab('html');
-        }
-
-        function loadPreviewState(id) {
-            console.log("Loading preview state:", id);
-            updatePreview();
-        }
-
-        document.addEventListener('DOMContentLoaded', handleIncomingURL);
         const htmlEditor = document.getElementById('htmlEditor');
         const cssEditor = document.getElementById('cssEditor');
         const jsEditor = document.getElementById('jsEditor');
@@ -351,8 +316,12 @@
         const statusMessage = document.getElementById('statusMessage');
         const previewPermalink = document.getElementById('previewPermalink');
         const editorPermalink = document.getElementById('editorPermalink');
+        const fullscreenPreview = document.getElementById('fullscreenPreview');
+        const fullscreenFrame = document.getElementById('fullscreenFrame');
+        const closeFullscreen = document.getElementById('closeFullscreen');
 
         let activeTab = 'html';
+        let currentProjectId = generateRandomString(15);
 
         function generateRandomString(length) {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -363,18 +332,44 @@
             return result;
         }
 
+        function saveProject() {
+            const project = {
+                html: htmlEditor.value,
+                css: cssEditor.value,
+                js: jsEditor.value,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem(`project-${currentProjectId}`, JSON.stringify(project));
+        }
+
+        function loadProject(id) {
+            const saved = localStorage.getItem(`project-${id}`);
+            if (saved) {
+                const project = JSON.parse(saved);
+                htmlEditor.value = project.html;
+                cssEditor.value = project.css;
+                jsEditor.value = project.js;
+                updatePreview();
+                return true;
+            }
+            return false;
+        }
+
         function generatePermalinks() {
             const previewId = generateRandomString(15);
-            const editorId = generateRandomString(15);
-
-            document.getElementById('previewPermalink').textContent = `/preview/${previewId}`;
-            document.getElementById('editorPermalink').textContent = `/editor/${editorId}`;
-
-            document.getElementById('previewPermalink').onclick = () => {
-                window.location.href = `https://mrdavidss.is-a.dev/htmlonline/preview/${previewId}`;
+            const editorId = currentProjectId;
+            
+            previewPermalink.textContent = `/preview/${previewId}`;
+            editorPermalink.textContent = `/editor/${editorId}`;
+            
+            previewPermalink.onclick = () => {
+                saveProject();
+                window.location.href = `/htmlonline/preview/${previewId}`;
             };
-            document.getElementById('editorPermalink').onclick = () => {
-                window.location.href = `https://mrdavidss.is-a.dev/htmlonline/editor/${editorId}`;
+            
+            editorPermalink.onclick = () => {
+                saveProject();
+                window.location.href = `/htmlonline/editor/${editorId}`;
             };
         }
 
@@ -383,41 +378,46 @@
                 const html = htmlEditor.value;
                 const css = cssEditor.value;
                 const js = jsEditor.value;
-
+                
                 const fullHtml = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>${css}</style>
-            </head>
-            <body>
-                ${html}
-                <script>${js}<\/script>
-            </body>
-            </html>
-        `;
-
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <style>${css}</style>
+                    </head>
+                    <body>
+                        ${html}
+                        <script>${js}<\/script>
+                    </body>
+                    </html>
+                `;
+                
                 previewFrame.srcdoc = fullHtml;
+                fullscreenFrame.srcdoc = fullHtml;
                 statusMessage.textContent = "Preview: 🟢 Active";
-
-                if (window.location.hash.includes('/preview/')) {
-                    document.querySelector('.editor-section').style.display = 'none';
-                    document.querySelector('.preview-section').style.width = '100%';
-                }
             } catch (error) {
                 statusMessage.textContent = "Error updating preview: " + error.message;
             }
         }
 
+        function openFullscreenPreview() {
+            fullscreenPreview.classList.add('active');
+            updatePreview();
+        }
+
+        function closeFullscreenPreview() {
+            fullscreenPreview.classList.remove('active');
+        }
+
         function switchTab(tab) {
             activeTab = tab;
-
+            
             document.querySelectorAll('.editor-section textarea').forEach(editor => {
                 editor.style.display = 'none';
             });
-
+            
             document.getElementById(`${tab}Editor`).style.display = 'block';
-
+            
             tabButtons.forEach(button => {
                 if (button.dataset.tab === tab) {
                     button.classList.add('active');
@@ -430,21 +430,21 @@
         async function handleZipImport(event) {
             const file = event.target.files[0];
             if (!file) return;
-
+            
             try {
                 statusMessage.textContent = "Importing ZIP file...";
-
+                
                 const zip = new JSZip();
                 const content = await zip.loadAsync(file);
-
+                
                 let html = '', css = '', js = '';
-
+                
                 for (const [relativePath, file] of Object.entries(content.files)) {
                     if (file.dir) continue;
-
+                    
                     const fileContent = await file.async('text');
                     const extension = relativePath.split('.').pop().toLowerCase();
-
+                    
                     if (extension === 'html') {
                         html = fileContent;
                     } else if (extension === 'css') {
@@ -453,11 +453,11 @@
                         js = fileContent;
                     }
                 }
-
+                
                 htmlEditor.value = html;
                 cssEditor.value = css;
                 jsEditor.value = js;
-
+                
                 updatePreview();
                 statusMessage.textContent = "Project imported successfully";
             } catch (error) {
@@ -468,7 +468,7 @@
         function exportProject() {
             try {
                 const zip = new JSZip();
-
+                
                 if (htmlEditor.value) {
                     zip.file("index.html", htmlEditor.value);
                 }
@@ -478,8 +478,8 @@
                 if (jsEditor.value) {
                     zip.file("script.js", jsEditor.value);
                 }
-
-                zip.generateAsync({ type: "blob" }).then(content => {
+                
+                zip.generateAsync({type: "blob"}).then(content => {
                     const url = URL.createObjectURL(content);
                     const a = document.createElement('a');
                     a.href = url;
@@ -500,7 +500,7 @@
                 const html = htmlEditor.value;
                 const css = cssEditor.value;
                 const js = jsEditor.value;
-
+                
                 const fullHtml = `
                     <!DOCTYPE html>
                     <html>
@@ -513,7 +513,7 @@
                     </body>
                     </html>
                 `;
-
+                
                 const newWindow = window.open();
                 newWindow.document.open();
                 newWindow.document.write(fullHtml);
@@ -534,10 +534,21 @@
             }
         }
 
-        generatePermalinks();
-        previewPermalink.addEventListener('click', copyToClipboard);
-        editorPermalink.addEventListener('click', copyToClipboard);
+        function handleURL() {
+            const path = window.location.pathname;
+            if (path.includes('/preview/')) {
+                const id = path.split('/preview/')[1];
+                if (loadProject(id)) {
+                    openFullscreenPreview();
+                }
+            } else if (path.includes('/editor/')) {
+                const id = path.split('/editor/')[1];
+                loadProject(id);
+                currentProjectId = id;
+            }
+        }
 
+        generatePermalinks();
         updatePreview();
 
         htmlEditor.addEventListener('input', updatePreview);
@@ -552,7 +563,9 @@
 
         exportProjectBtn.addEventListener('click', exportProject);
 
-        openPreviewBtn.addEventListener('click', openInNewWindow);
+        openPreviewBtn.addEventListener('click', openFullscreenPreview);
+
+        closeFullscreen.addEventListener('click', closeFullscreenPreview);
 
         clearBtn.addEventListener('click', clearAll);
 
@@ -562,7 +575,8 @@
                 switchTab(tab);
             });
         });
+
+        window.addEventListener('load', handleURL);
     </script>
 </body>
-
 </html>
